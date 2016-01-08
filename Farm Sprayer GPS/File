@@ -1,0 +1,3289 @@
+
+
+
+
+
+
+
+if (id == R.id.resetcounter) {
+
+
+
+
+distancesph = 0;
+
+}
+
+@Override
+protected void startDemo() {
+
+
+
+
+@Override
+public void  onLocationChanged(Location location) {
+
+float speed = location.getSpeed();
+// m per sec equals 2.23694 mph
+double mphspeed = speed * 2.23694 * kilometersconversion;
+double roundedmph = Math.round(mphspeed * 100.0)/100.0 ;
+
+mSpeedView = (TextView) findViewById(R.id.mphindicator);
+
+
+if(metric == false) {
+
+mSpeedView.setText(roundedmph + " mph"); }
+
+else {
+mSpeedView.setText(roundedmph + " kph");
+
+}
+
+if (widthInMeters != 0  ) {
+
+if(centerControl == true){ getMap().moveCamera(CameraUpdateFactory.newLatLng((new LatLng(location.getLatitude(), location.getLongitude()))));}
+
+
+
+point1 = (new LatLng(location.getLatitude()   , location.getLongitude()));
+
+
+
+point2 = (new LatLng(location.getLatitude()   , location.getLongitude()));
+current = (new LatLng(location.getLatitude()   , location.getLongitude()));
+
+
+if (location.hasAccuracy() && location.getAccuracy() <= 20)
+{
+
+if (previous != null) {
+
+
+
+if (setIt == true){
+distancesph +=  SphericalUtil.computeDistanceBetween(previous, current);
+}
+
+
+}
+
+previous = current;
+
+double actualfeet = widthInMeters ;
+double distancetraveledconversion = distancesph * 3.28084;
+
+double acres = distancetraveledconversion * actualfeet/43560 * hectareconversion;
+
+double roundedacres = Math.round(acres*100.0)/100.0;
+
+pubroundedacres = roundedacres;
+
+mTextView1 = (TextView) findViewById(R.id.textView2);
+
+if(metric == false) {
+mTextView1.setText(roundedacres + " ac");}
+else{mTextView1.setText(roundedacres + " ha");}
+}
+
+float bearing = location.getBearing();
+//version three zoom commented out to fix zoom fight
+double bear = bearing;
+if(orientation == true) {
+
+float zoom = getMap().getCameraPosition().zoom;
+
+CameraPosition cameraPosition =
+new CameraPosition.Builder()
+.target(new LatLng(location.getLatitude(), location.getLongitude()))
+.bearing(bearing)
+.zoom(zoom)
+.build();
+
+getMap().animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+}
+
+navOrigin = (new LatLng(location.getLatitude()   , location.getLongitude()));
+
+navSecPoint = SphericalUtil.computeOffset(point2, 500, bear);
+
+
+
+PolylineOptions navigation = new PolylineOptions()
+.add(navOrigin)
+.add(navSecPoint)
+.color(Color.MAGENTA);
+
+if(navigationalLine !=null) { navigationalLine.remove(); }
+else { navigationalLine = getMap().addPolyline(navigation); }
+
+navigationalLine.remove();
+
+navigationalLine = getMap().addPolyline(navigation);
+
+
+
+if (setIt == true){
+
+
+if(lineoncontrol == true){
+
+heightEngine(); //controls mapFlipper and heightMagnitude for boomWidthmultiplier and returns distances from center line
+boomWidthMultiplier(); //determines which line you are nearest
+arrowControl(); //lightbar engine
+}
+currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+
+
+if (location.hasAccuracy() && location.getAccuracy() <= 30)
+{
+
+if (lastLocation != null && setIt == true)
+{
+ArPoints();
+// PolygonFactory();
+
+}
+
+lastLocation = currentLocation;
+storageEngine();
+}
+
+}
+else {}
+
+}
+
+else { }
+
+
+}
+
+
+
+
+public void PolygonFactory() {
+
+
+
+
+LatLng polypoint1 = SphericalUtil.computeOffset(lastLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, 90 + location.getBearing());
+LatLng polypoint2 = SphericalUtil.computeOffset(lastLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, location.getBearing() - 90F);
+LatLng polypoint3 = SphericalUtil.computeOffset(currentLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, 90 + location.getBearing());
+LatLng polypoint4 = SphericalUtil.computeOffset(currentLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, location.getBearing() - 90F);
+
+
+
+
+Polygon polygon = getMap().addPolygon(new PolygonOptions()
+.add(polypoint1, polypoint2, polypoint4, polypoint3)
+.strokeColor(Color.BLUE)
+.strokeWidth(1)
+.fillColor(Color.parseColor("#59FF0000")));
+
+
+
+
+}
+
+public void ArPoints() {
+
+pointNum++;
+
+LatLng polypoint1 = SphericalUtil.computeOffset(lastLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, 90 + location.getBearing());
+LatLng polypoint2 = SphericalUtil.computeOffset(lastLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, location.getBearing() - 90F);
+LatLng polypoint3 = SphericalUtil.computeOffset(currentLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, 90 + location.getBearing());
+LatLng polypoint4 = SphericalUtil.computeOffset(currentLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, location.getBearing() - 90F);
+
+
+
+
+Polygon polygon = getMap().addPolygon(new PolygonOptions()
+.add(polypoint1, polypoint2, polypoint4, polypoint3)
+.strokeColor(Color.BLUE)
+.strokeWidth(1)
+.fillColor(Color.parseColor("#59FF0000")));
+
+if(pointNum % 4 == 0) {
+
+getMap().clear();
+
+mapReloadStarter();
+pointArray.add(currentLocation);
+double bearAdded =  location.getBearing();
+bearingArray.add(bearAdded);
+widthArray.add(boomWidth);
+ArPointsFactory();
+
+
+
+
+}
+
+
+
+}
+
+public void ArPointsFactory() {
+int size = pointArray.size();
+LatLng previousPosition = null;
+for(int i=0;i<size;i++){
+
+LatLng currentLocation11 = (LatLng) pointArray.get(i);
+
+double bear = (Double) bearingArray.get(i);
+
+double boomwidth = (Double) widthArray.get(i);
+
+if(previousPosition != null){
+
+LatLng polypoint1 = SphericalUtil.computeOffset(previousPosition, ( boomwidth) / 2, 90 + bear);
+LatLng polypoint2 = SphericalUtil.computeOffset(previousPosition, ( boomwidth ) / 2, bear - 90F);
+LatLng polypoint3 = SphericalUtil.computeOffset(currentLocation11, ( boomwidth ) / 2, 90 + bear);
+LatLng polypoint4 = SphericalUtil.computeOffset(currentLocation11, ( boomwidth) / 2, bear - 90F);
+
+Polygon polygon = getMap().addPolygon(new PolygonOptions()
+.add(polypoint1, polypoint2, polypoint4, polypoint3)
+.strokeColor(Color.BLUE)
+.strokeWidth(1)
+.fillColor(Color.parseColor("#59FF0000")));
+
+previousPosition = currentLocation11;
+
+}
+else { previousPosition = currentLocation11;}
+
+
+}
+
+
+
+
+
+
+}
+
+
+
+
+
+private void drawPolygon(LatLng point,LatLng previousPoint, double boomwidth, double bearing){
+
+//make polygons here
+//do something about this lastLocation and currentLocation
+
+if(previousPoint != null){
+
+
+
+LatLng polypoint1 = SphericalUtil.computeOffset(previousPoint, (0.30480000000000002D * boomwidth * boomconversionfactor) / 2, 90 + bear);
+LatLng polypoint2 = SphericalUtil.computeOffset(previousPoint, (0.30480000000000002D * boomwidth * boomconversionfactor) / 2, bear - 90F);
+LatLng polypoint3 = SphericalUtil.computeOffset(locationEngine, (0.30480000000000002D * boomwidth * boomconversionfactor) / 2, 90 + bear);
+LatLng polypoint4 = SphericalUtil.computeOffset(locationEngine, (0.30480000000000002D * boomwidth * boomconversionfactor) / 2, bear - 90F);
+
+Polygon polygon = getMap().addPolygon(new PolygonOptions()
+.add(polypoint1, polypoint2, polypoint4, polypoint3)
+.strokeColor(Color.RED)
+.fillColor(Color.BLUE));
+
+
+// Creating an instance of MarkerOptions
+} // end of doesn't equal null
+}
+
+
+
+
+
+public void onLoaderReset(Loader<Cursor> arg0) {
+// TODO Auto-generated method stub
+}
+
+
+
+
+
+
+
+
+
+
+
+@Override
+public Loader<Cursor> onCreateLoader(int arg0,
+Bundle arg1) {
+
+// Uri to the content provider LocationsContentProvider
+Uri uri = LocationsContentProvider.CONTENT_URI;
+
+// Fetches all the rows from locations table
+return new CursorLoader(this, uri, null, null, null, null);
+
+}
+
+
+
+
+@Override
+public void onClick(View v) {
+// TODO Auto-generated method stub
+
+}
+
+private void loadSpinnerData() {
+// database handler
+
+}
+
+
+@Override
+public void onItemSelected(AdapterView<?> parent, View view, int position,
+long id) {
+
+label = parent.getItemAtPosition(position).toString();
+
+
+
+
+//fieldLoader();
+// popupWindowOpener.dismiss();
+// TODO Auto-generated method stub
+
+}
+
+public void setLabel(String label) {
+this.label = label;
+}
+
+public static String getLabel() {
+return label;
+}
+
+
+public void fieldLoader() {
+
+Toast.makeText(getApplicationContext(), "LOADING " + label,
+Toast.LENGTH_LONG).show();
+
+//DO QUERY FOR ALL STUFF WITH THAT FIELD NAME
+getSupportLoaderManager().initLoader(0, null, this);
+
+//PUT A BUTTON IN POP UP VIEW THAT WILL ENGAGE THE LOADERMANAGER
+
+
+}
+
+@Override
+public void onNothingSelected(AdapterView<?> arg0) {
+// TODO Auto-generated method stub
+
+}
+
+private String getDateTime() {
+SimpleDateFormat dateFormat = new SimpleDateFormat(
+"yyyy-MM-dd", Locale.getDefault());
+Date date = new Date();
+return dateFormat.format(date);
+}
+
+
+
+
+}
+
+package com.direction.investor.farmsprayer;
+
+import android.annotation.SuppressLint;
+
+
+
+
+
+
+
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.location.Location;
+import android.location.GpsStatus;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Environment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.PopupWindow;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.ToggleButton;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.CameraPosition.Builder;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
+import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.SphericalUtil;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.sql.Array;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+
+
+
+
+@SuppressLint("DefaultLocale")
+public class PolygonEngine extends BaseDemoActivity implements LocationListener, GoogleMap.OnMarkerDragListener, OnClickListener, LoaderCallbacks<Cursor>, OnItemSelectedListener {
+private TextView mTextView;
+private TextView mTextView1;
+private TextView mSpeedView;
+private TextView lineDistanceView;
+public static Marker mMarkerA;
+public static Marker mMarkerB;
+private Marker mMarkerC;
+private Marker mMarkerD;
+private Marker mMarkerE;
+private Marker mMarkerF;
+private Marker mMarkerG;
+private Marker mMarkerH;
+private Marker mMarkerI;
+private Marker mMarkerJ;
+private Marker mMarkerK;
+private Marker mMarkerL;
+private Marker mMarkerM;
+private Marker mMarkerN;
+private Marker mMarkerO;
+private Marker mMarkerP;
+private Marker mMarkerQ;
+private Marker mMarkerR;
+private Marker mMarkerS;
+private Marker mMarkerT;
+private Marker mMarkerU;
+private Marker mMarkerV;
+private Marker mMarkerW;
+private Marker mMarkerX;
+private Marker mMarkerY;
+private Marker mMarkerZ;
+private Marker mMarkerA1;
+private Marker mMarkerB1;
+private Marker mMarkerC1;
+private Marker mMarkerD1;
+private Marker mMarkerE1;
+private Marker mMarkerF1;
+private Marker mMarkerG1;
+private Marker mMarkerH1;
+private Marker mMarkerI1;
+private Marker mMarkerJ1;
+private Marker mMarkerK1;
+private Marker mMarkerL1;
+private Marker mMarkerM1;
+private Marker mMarkerN1;
+private Marker mMarkerO1;
+private Marker mMarkerP1;
+private Marker mMarkerA2;
+private Marker mMarkerB2;
+private Marker mMarkerC2;
+private Marker mMarkerD2;
+private Marker mMarkerE2;
+private Marker mMarkerF2;
+private Marker mMarkerO12;
+private Marker mMarkerO13;
+private Marker mMarkerO14;
+private Marker mMarkerO15;
+private Marker mMarkerO16;
+private Marker mMarkerO17;
+private Marker mMarkerO18;
+private Marker mMarkerO19;
+private Marker mMarkerO120;
+
+private Marker mMarkerP12;
+private Marker mMarkerP13;
+private Marker mMarkerP14;
+private Marker mMarkerP15;
+private Marker mMarkerP16;
+private Marker mMarkerP17;
+private Marker mMarkerP18;
+private Marker mMarkerP19;
+private Marker mMarkerP120;
+
+private Marker mMarkerY13;
+private Marker mMarkerY14;
+private Marker mMarkerY15;
+private Marker mMarkerY16;
+private Marker mMarkerY17;
+private Marker mMarkerY18;
+private Marker mMarkerY19;
+private Marker mMarkerY120;
+
+private Marker mMarkerZ13;
+private Marker mMarkerZ14;
+private Marker mMarkerZ15;
+private Marker mMarkerZ16;
+private Marker mMarkerZ17;
+private Marker mMarkerZ18;
+private Marker mMarkerZ19;
+private Marker mMarkerZ120;
+
+
+
+Spinner spinner;
+public static double heighthalfer = 1;
+public static boolean heighthalferboolean = false;
+public static LatLng previousPoint = null;
+public SQLiteDatabase mDB;
+public static  String DATABASE_TABLE = "default a";
+public EditText length = null;
+public String lengthString =null;
+public PopupWindow popupWindowOpener;
+public static boolean heightMagnitude;
+public static boolean mapFlipper = false;
+public static boolean lineoncontrol = false;
+public static double height;
+public static double boomWidth =0;
+public static int boomWidthMultiplier;
+public static LatLng lastLocation;
+public static LatLng currentLocation;
+public static double pubroundedacres;
+
+public static int locationCount = 0;
+public static double lat=0;
+public static double lng=0;
+public static float zoom=0;
+public static double bear = 0;
+public static double boomwidth = 0;
+
+private Polyline mPolyline;
+private Polyline mPolylineB;
+private boolean mPolylineBvis;
+private Polyline mPolylineC;
+private boolean mPolylineCvis;
+private Polyline mPolylineD;
+private boolean mPolylineDvis;
+private Polyline mPolylineE;
+private boolean mPolylineEvis;
+private Polyline mPolylineF;
+private boolean mPolylineFvis;
+private Polyline mPolylineG;
+private boolean mPolylineGvis;
+private Polyline mPolylineH;
+private boolean mPolylineHvis;
+private Polyline mPolylineI;
+private boolean mPolylineIvis;
+private Polyline mPolylineJ;
+private boolean mPolylineJvis;
+private Polyline mPolylineK;
+private boolean mPolylineKvis;
+private Polyline mPolylineL;
+private boolean mPolylineLvis;
+private Polyline mPolylineM;
+private boolean mPolylineMvis;
+private Polyline mPolylineN;
+private boolean mPolylineNvis;
+private Polyline mPolylineO;
+private boolean mPolylineOvis;
+private Polyline mPolylineP;
+private boolean mPolylinePvis;
+private Polyline mPolylineQ;
+private boolean mPolylineQvis;
+private Polyline mPolylineR;
+private boolean mPolylineRvis;
+private Polyline mPolylineS;
+private boolean mPolylineSvis;
+private Polyline mPolylineT;
+private boolean mPolylineTvis;
+private Polyline mPolylineU;
+private boolean mPolylineUvis;
+private Polyline mPolylineV;
+private boolean mPolylineVvis;
+private Polyline mPolylineW;
+private boolean mPolylineWvis;
+private Polyline mPolylineX;
+private boolean mPolylineXvis;
+private Polyline mPolylineSecSideA12;
+private Polyline mPolylineSecSideA13;
+private Polyline mPolylineSecSideA14;
+private Polyline mPolylineSecSideA15;
+private Polyline mPolylineSecSideA16;
+private Polyline mPolylineSecSideA17;
+private Polyline mPolylineSecSideA18;
+private Polyline mPolylineSecSideA19;
+private Polyline mPolylineSecSideA20;
+
+private Polyline mPolylineM13;
+private Polyline mPolylineM14;
+private Polyline mPolylineM15;
+private Polyline mPolylineM16;
+private Polyline mPolylineM17;
+private Polyline mPolylineM18;
+private Polyline mPolylineM19;
+private Polyline mPolylineM20;
+
+
+
+public RadioGroup radioGroup;
+public RadioGroup radioGroup2;
+public RadioButton standard;
+public RadioButton metricRadio;
+public RadioButton lineoff;
+public RadioButton lineon;
+
+public static LocationManager locationmanager;
+public static LatLng point1, point2, point3 ;
+public static double heading;
+public static double headingline;
+public static double boomconversionfactor = 1;
+public static double tometersconversion = 1;
+public static double kilometersconversion =1;
+public static double hectareconversion = 1;
+public static boolean metric = false;
+public static float bearingorientation;
+public static Location location;
+public static LatLng previous;
+public static LatLng current;
+public static double widthInMeters = 0;
+
+public LatLng locationEngine;
+
+public static String fieldName = "default b";
+public static String fieldComments = "default c";
+public static String name;
+public static String lacomments;
+public static String label;
+
+float[] results;
+boolean setIt = false;
+boolean centerControl = true;
+public static LatLng navOrigin;
+public static LatLng navSecPoint;
+public static Polyline navigationalLine;
+public static double distancesph;
+public static boolean orientation = false;
+
+public double semiPerimeter;
+
+public double sideA;
+public double sideB;
+public double sideC;
+public double distToAB;
+
+
+
+public static ArrayList pointArray = new ArrayList();
+public static ArrayList bearingArray = new ArrayList();
+public static ArrayList widthArray = new ArrayList();
+
+public static int pointNum = 0;
+
+
+
+@Override
+protected int getLayoutId() {
+return R.layout.polygonsprayer;
+}
+
+
+@Override
+public boolean onCreateOptionsMenu(Menu menu) {
+MenuInflater inflater = getMenuInflater();
+inflater.inflate(R.menu.linetrackingmenu, menu);
+return true;
+}
+
+@Override
+public boolean onOptionsItemSelected(MenuItem item) {
+
+int id = item.getItemId();
+if (id == R.id.item1) {
+Toast.makeText(this, "Standard Units Selected. Feet,Ac,mph", Toast.LENGTH_LONG).show();
+boomconversionfactor = 1;
+tometersconversion = 1;
+kilometersconversion = 1;
+hectareconversion = 1;
+metric = false;
+
+
+
+}
+
+if (id == R.id.item2) {
+Toast.makeText(this, "Metric Units. Meters, Ha, kph", Toast.LENGTH_LONG).show();
+
+boomconversionfactor = 3.2808;
+tometersconversion = 0.3048;
+kilometersconversion = 1.60934;
+hectareconversion = 0.404686;
+metric = true;
+
+
+
+}
+
+if (id == R.id.centerhold) {
+
+if (centerControl == true) {
+
+centerControl = false;
+Toast.makeText(this, "Center Hold is OFF", Toast.LENGTH_LONG).show();
+
+
+// The toggle is enabled
+} else {
+
+centerControl = true;
+Toast.makeText(this, "Center Hold is ON", Toast.LENGTH_LONG).show();
+// The toggle is disabled
+}
+
+
+
+}
+
+if (id == R.id.clearmap) {
+
+
+getMap().clear();
+startDemo();
+
+}
+
+if (id == R.id.imageexport) {
+
+Toast.makeText(getApplicationContext(), "ScreenShot in Downloads",
+Toast.LENGTH_LONG).show();
+
+
+getMap().setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+public void onMapLoaded() {
+getMap().snapshot(new GoogleMap.SnapshotReadyCallback() {
+public void onSnapshotReady(Bitmap bitmap) {
+// Write image to disk
+FileOutputStream fos = null;
+try {
+
+// UNIQUE FILE NAME
+Date date = new Date();
+SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_hhmmss");
+String formattedDate = sdf.format(date);
+String filename = "MapShot_" + formattedDate + ".png";
+
+File f = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename);
+fos = new FileOutputStream(f);
+
+
+
+} catch (FileNotFoundException e) {
+// TODO Auto-generated catch block
+e.printStackTrace();
+}
+bitmap.compress(Bitmap.CompressFormat.PNG, 90, fos);
+}
+});
+}
+});
+
+
+}
+
+
+if (id == R.id.resetcounter) {
+
+
+
+
+distancesph = 0;
+
+}
+
+if (id == R.id.openpreviousjob) {
+
+
+//	getMap().clear();
+
+//Choose which table to load
+//Reload data points
+//PUT THIS THING IN AN ASYNC TASK
+
+
+//LocationPickupTask pickupTask = new LocationPickupTask();
+
+// Storing the latitude, longitude and zoom level to SQLite database
+//pickupTask.execute();
+
+
+
+LayoutInflater layoutInflater
+= (LayoutInflater)getBaseContext()
+.getSystemService(LAYOUT_INFLATER_SERVICE);
+final View popupViewOpener = layoutInflater.inflate(R.layout.popupfileopener, null);
+popupWindowOpener = new PopupWindow(
+popupViewOpener,
+LayoutParams.MATCH_PARENT,
+LayoutParams.MATCH_PARENT);
+
+popupWindowOpener.setFocusable(true);
+popupWindowOpener.showAsDropDown(popupViewOpener);
+
+spinner = (Spinner) popupViewOpener.findViewById(R.id.spinnerOpener);
+
+
+
+// Spinner click listener
+//      spinner.setOnItemSelectedListener(null);
+
+// Loading spinner data from database
+//DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+
+
+
+
+LocationsDB db = new LocationsDB(getApplicationContext());
+
+// Spinner Drop down elements
+List<String> lables = db.getAllLabels();
+
+// Creating adapter for spinner
+ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+android.R.layout.simple_spinner_item, lables);
+//  android.R.layout.simple_spinner_item, lables);
+// Drop down layout style - list view with radio button
+dataAdapter
+// .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+// attaching data adapter to spinner
+spinner.setAdapter(dataAdapter);
+
+spinner.setOnItemSelectedListener(this);
+
+Button cancel = (Button)popupViewOpener.findViewById(R.id.button1);
+
+cancel.setOnClickListener(new Button.OnClickListener(){
+
+@Override
+public void onClick(View v) {
+// TODO Auto-generated method stub
+
+
+
+
+popupWindowOpener.dismiss();
+
+
+
+}});
+
+Button btnStart = (Button)popupViewOpener.findViewById(R.id.buttonStart);
+
+btnStart.setOnClickListener(new Button.OnClickListener(){
+
+@Override
+public void onClick(View v) {
+// TODO Auto-generated method stub
+
+if( label != null){
+fieldLoader();
+
+
+popupWindowOpener.dismiss();
+}
+else{popupWindowOpener.dismiss();}
+
+
+}});
+
+
+
+//getSupportLoaderManager().initLoader(0, null, this);
+
+}
+
+if (id == R.id.halfheight) {
+
+
+heighthalferboolean = true;
+if(heighthalferboolean == true){
+
+heighthalfer= 0.5;
+}
+
+}
+
+if (id == R.id.screentrack){
+
+if (orientation == false) {
+
+orientation = true;
+Toast.makeText(this, "Screen Tracking On", Toast.LENGTH_LONG).show();
+
+
+// The toggle is enabled
+} else {
+
+orientation = false;
+
+Toast.makeText(this, "Screen Tracking Off", Toast.LENGTH_LONG).show();
+
+// The toggle is disabled
+}
+
+}
+
+
+return super.onOptionsItemSelected(item);
+}
+
+
+
+@Override
+protected void startDemo() {
+
+
+
+
+mTextView = (TextView) findViewById(R.id.textView50000);
+// lineDistanceView = (TextView) findViewById(R.id.textView3);
+
+
+//    Toast.makeText(this, "REMEMBER TO LOCK SCREEN ORIENTATION! Long Press to drag markers.", Toast.LENGTH_LONG).show();
+
+// getMap().moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(-33.8256, 151.2395), 17));
+getMap().setOnMarkerDragListener(this);
+getMap().setMapType(GoogleMap.MAP_TYPE_HYBRID);
+getMap().setMyLocationEnabled(true);
+
+
+//popup screen controls
+
+final Button btnOpenPopup = (Button)findViewById(R.id.buttonStart);
+btnOpenPopup.setOnClickListener(new Button.OnClickListener(){
+
+@Override
+public void onClick(View arg0) {
+LayoutInflater layoutInflater
+= (LayoutInflater)getBaseContext()
+.getSystemService(LAYOUT_INFLATER_SERVICE);
+final View popupView = layoutInflater.inflate(R.layout.popup, null);
+final PopupWindow popupWindow = new PopupWindow(
+popupView,
+LayoutParams.MATCH_PARENT,
+LayoutParams.MATCH_PARENT);
+
+popupWindow.setFocusable(true);
+
+
+
+OnClickListener standardlistener = new OnClickListener (){
+public void onClick(View v) {
+
+standard.setChecked(true);
+
+
+boomconversionfactor = 1;
+tometersconversion = 1;
+kilometersconversion = 1;
+hectareconversion = 1;
+metric = false;
+Toast.makeText(getApplicationContext(), "STANDARD UNITS",
+Toast.LENGTH_LONG).show();
+
+
+
+}
+};
+
+OnClickListener metriclistenerlistener = new OnClickListener (){
+public void onClick(View v) {
+metricRadio.setChecked(true);
+boomconversionfactor = 3.2808;
+tometersconversion = 0.3048;
+kilometersconversion = 1.60934;
+hectareconversion = 0.404686;
+metric = true;
+Toast.makeText(getApplicationContext(), "METRIC UNITS",
+Toast.LENGTH_LONG).show();
+
+
+}
+};
+
+OnClickListener lineofflistener = new OnClickListener (){
+public void onClick(View v) {
+
+lineoff.setChecked(true);
+
+lineoncontrol = false;
+
+Toast.makeText(getApplicationContext(), "LINE GUIDANCE OFF",
+Toast.LENGTH_LONG).show();
+
+
+
+}
+};
+
+OnClickListener lineonlistener = new OnClickListener (){
+public void onClick(View v) {
+
+lineon.setChecked(true);
+
+lineoncontrol = true;
+
+if (location!=null) {
+
+getMap().moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 16));
+
+mMarkerA = getMap().addMarker(new MarkerOptions().position(new LatLng(location.getLatitude() + 0.001, location.getLongitude())).draggable(true));
+
+
+mMarkerB = getMap().addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).draggable(true));
+
+
+
+
+mPolyline = getMap().addPolyline(new PolylineOptions().geodesic(true));
+
+
+}
+else { Toast.makeText(getApplicationContext(), "NO GPS SIGNAL!", Toast.LENGTH_LONG).show(); }
+
+
+Toast.makeText(getApplicationContext(), "LINE GUIDANCE ON",
+Toast.LENGTH_LONG).show();
+
+
+
+}
+};
+
+
+radioGroup = (RadioGroup) popupView.findViewById(R.id.radiogroup);
+radioGroup2 = (RadioGroup) popupView.findViewById(R.id.radiogroup2);
+standard = (RadioButton) popupView.findViewById(R.id.standard);
+metricRadio = (RadioButton) popupView.findViewById(R.id.metric);
+lineoff = (RadioButton) popupView.findViewById(R.id.lineoff);
+lineon = (RadioButton) popupView.findViewById(R.id.lineon);
+lineoff.setOnClickListener(lineofflistener);
+lineon.setOnClickListener(lineonlistener);
+
+
+standard.setOnClickListener(standardlistener);
+metricRadio.setOnClickListener(metriclistenerlistener);
+
+Button cancel = (Button)popupView.findViewById(R.id.button1);
+
+cancel.setOnClickListener(new Button.OnClickListener(){
+
+@Override
+public void onClick(View v) {
+// TODO Auto-generated method stub
+
+
+
+
+popupWindow.dismiss();
+
+
+
+}});
+
+Button btnDismiss = (Button)popupView.findViewById(R.id.startbutton);
+
+btnDismiss.setOnClickListener(new Button.OnClickListener(){
+
+@Override
+public void onClick(View v) {
+// TODO Auto-generated method stub
+
+length = (EditText) popupView.findViewById(R.id.width);
+
+lengthString = length.getText().toString();
+
+
+if (lengthString != null && lengthString.length()>0 ) {
+
+
+widthInMeters = Double.parseDouble(lengthString);
+
+}
+
+else { Toast.makeText(getApplicationContext(), "ENTER BOOM FEET",
+Toast.LENGTH_SHORT).show(); }
+//feet
+boomWidth = widthInMeters * boomconversionfactor * 0.3048;
+
+
+EditText fieldname = (EditText) popupView.findViewById(R.id.fieldname);
+fieldName = fieldname.getText().toString();
+
+EditText comments = (EditText) popupView.findViewById(R.id.commentlines);
+fieldComments = comments.getText().toString();
+
+
+DATABASE_TABLE = fieldName;
+
+
+
+
+popupWindow.dismiss();
+
+
+
+}});
+
+popupWindow.showAsDropDown(btnOpenPopup, 50, -30);
+
+}});
+
+//end of popup screen controls.
+
+
+
+locationmanager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+
+locationmanager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 3, this);
+
+location = locationmanager
+.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+
+
+ToggleButton togglePause = (ToggleButton) findViewById(R.id.toggleButton2);
+togglePause.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+if (isChecked) {
+
+setIt = false;
+
+
+
+// The toggle is enabled
+} else {
+
+setIt = true;
+lastLocation = null;
+// The toggle is disabled
+}
+}
+});
+
+
+if (location!=null) {
+
+getMap().moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 16));
+
+}
+
+else { Toast.makeText(getApplicationContext(), "NO GPS SIGNAL!", Toast.LENGTH_LONG).show(); }
+
+Button startMoving = (Button)findViewById(R.id.storebutton);
+
+startMoving.setOnClickListener(new Button.OnClickListener(){
+
+@Override
+public void onClick(View v) {
+
+setIt=true;
+
+if(lineoncontrol == true){
+mapStarter();
+}
+
+
+
+
+
+}});
+
+
+
+}
+
+
+
+private void updatePolyline() {
+
+//left right set
+mPolyline.setPoints(Arrays.asList(mMarkerA.getPosition(), mMarkerB.getPosition()));
+mPolylineB.setPoints(Arrays.asList(mMarkerC.getPosition(), mMarkerD.getPosition()));
+mPolylineC.setPoints(Arrays.asList(mMarkerE.getPosition(), mMarkerF.getPosition()));
+mPolylineD.setPoints(Arrays.asList(mMarkerG.getPosition(), mMarkerH.getPosition()));
+mPolylineE.setPoints(Arrays.asList(mMarkerI.getPosition(), mMarkerJ.getPosition()));
+mPolylineF.setPoints(Arrays.asList(mMarkerK.getPosition(), mMarkerL.getPosition()));
+mPolylineG.setPoints(Arrays.asList(mMarkerM.getPosition(), mMarkerN.getPosition()));
+mPolylineH.setPoints(Arrays.asList(mMarkerO.getPosition(), mMarkerP.getPosition()));
+mPolylineI.setPoints(Arrays.asList(mMarkerQ.getPosition(), mMarkerR.getPosition()));
+mPolylineJ.setPoints(Arrays.asList(mMarkerS.getPosition(), mMarkerT.getPosition()));
+mPolylineK.setPoints(Arrays.asList(mMarkerU.getPosition(), mMarkerV.getPosition()));
+mPolylineL.setPoints(Arrays.asList(mMarkerW.getPosition(), mMarkerX.getPosition()));
+mPolylineM.setPoints(Arrays.asList(mMarkerY.getPosition(), mMarkerZ.getPosition()));
+
+mPolylineM13.setPoints(Arrays.asList(mMarkerY13.getPosition(), mMarkerZ13.getPosition()));
+mPolylineM14.setPoints(Arrays.asList(mMarkerY14.getPosition(), mMarkerZ14.getPosition()));
+mPolylineM15.setPoints(Arrays.asList(mMarkerY15.getPosition(), mMarkerZ15.getPosition()));
+mPolylineM16.setPoints(Arrays.asList(mMarkerY16.getPosition(), mMarkerZ16.getPosition()));
+mPolylineM17.setPoints(Arrays.asList(mMarkerY17.getPosition(), mMarkerZ17.getPosition()));
+mPolylineM18.setPoints(Arrays.asList(mMarkerY18.getPosition(), mMarkerZ18.getPosition()));
+mPolylineM19.setPoints(Arrays.asList(mMarkerY19.getPosition(), mMarkerZ19.getPosition()));
+mPolylineM20.setPoints(Arrays.asList(mMarkerY120.getPosition(), mMarkerZ120.getPosition()));
+
+
+//left right set
+mPolylineN.setPoints(Arrays.asList(mMarkerA1.getPosition(), mMarkerB1.getPosition()));
+mPolylineO.setPoints(Arrays.asList(mMarkerC1.getPosition(), mMarkerD1.getPosition()));
+mPolylineP.setPoints(Arrays.asList(mMarkerE1.getPosition(), mMarkerF1.getPosition()));
+mPolylineQ.setPoints(Arrays.asList(mMarkerG1.getPosition(), mMarkerH1.getPosition()));
+mPolylineR.setPoints(Arrays.asList(mMarkerI1.getPosition(), mMarkerJ1.getPosition()));
+mPolylineS.setPoints(Arrays.asList(mMarkerK1.getPosition(), mMarkerL1.getPosition()));
+mPolylineT.setPoints(Arrays.asList(mMarkerM1.getPosition(), mMarkerN1.getPosition()));
+mPolylineU.setPoints(Arrays.asList(mMarkerO1.getPosition(), mMarkerP1.getPosition()));
+mPolylineV.setPoints(Arrays.asList(mMarkerA2.getPosition(), mMarkerB2.getPosition()));
+mPolylineW.setPoints(Arrays.asList(mMarkerC2.getPosition(), mMarkerD2.getPosition()));
+mPolylineX.setPoints(Arrays.asList(mMarkerE2.getPosition(), mMarkerF2.getPosition()));
+
+mPolylineSecSideA12.setPoints(Arrays.asList(mMarkerO12.getPosition(), mMarkerP12.getPosition()));
+mPolylineSecSideA13.setPoints(Arrays.asList(mMarkerO13.getPosition(), mMarkerP13.getPosition()));
+mPolylineSecSideA14.setPoints(Arrays.asList(mMarkerO14.getPosition(), mMarkerP14.getPosition()));
+mPolylineSecSideA15.setPoints(Arrays.asList(mMarkerO15.getPosition(), mMarkerP15.getPosition()));
+mPolylineSecSideA16.setPoints(Arrays.asList(mMarkerO16.getPosition(), mMarkerP16.getPosition()));
+mPolylineSecSideA17.setPoints(Arrays.asList(mMarkerO17.getPosition(), mMarkerP17.getPosition()));
+mPolylineSecSideA18.setPoints(Arrays.asList(mMarkerO18.getPosition(), mMarkerP18.getPosition()));
+mPolylineSecSideA19.setPoints(Arrays.asList(mMarkerO19.getPosition(), mMarkerP19.getPosition()));
+mPolylineSecSideA20.setPoints(Arrays.asList(mMarkerO120.getPosition(), mMarkerP120.getPosition()));
+
+
+
+}
+
+
+
+
+@SuppressLint("DefaultLocale")
+private String formatNumber(double distance) {
+String unit = "m";
+if (distance < 1) {
+distance *= 1000;
+unit = "mm";
+} else if (distance > 1000) {
+distance /= 1000;
+unit = "km";
+}
+
+return String.format("%4.3f%s", distance, unit);
+}
+
+@Override
+public void onMarkerDragEnd(Marker marker) {
+
+
+
+}
+
+@Override
+public void onMarkerDragStart(Marker marker) {
+
+
+}
+
+@Override
+public void onMarkerDrag(Marker marker) {
+
+
+//  updatePolyline();
+
+
+}
+
+
+@Override
+public void  onLocationChanged(Location location) {
+
+float speed = location.getSpeed();
+// m per sec equals 2.23694 mph
+double mphspeed = speed * 2.23694 * kilometersconversion;
+double roundedmph = Math.round(mphspeed * 100.0)/100.0 ;
+
+mSpeedView = (TextView) findViewById(R.id.mphindicator);
+
+
+if(metric == false) {
+
+mSpeedView.setText(roundedmph + " mph"); }
+
+else {
+mSpeedView.setText(roundedmph + " kph");
+
+}
+
+if (widthInMeters != 0  ) {
+
+if(centerControl == true){ getMap().moveCamera(CameraUpdateFactory.newLatLng((new LatLng(location.getLatitude(), location.getLongitude()))));}
+
+
+
+point1 = (new LatLng(location.getLatitude()   , location.getLongitude()));
+
+
+
+point2 = (new LatLng(location.getLatitude()   , location.getLongitude()));
+current = (new LatLng(location.getLatitude()   , location.getLongitude()));
+
+
+if (location.hasAccuracy() && location.getAccuracy() <= 20)
+{
+
+if (previous != null) {
+
+
+
+if (setIt == true){
+distancesph +=  SphericalUtil.computeDistanceBetween(previous, current);
+}
+
+
+}
+
+previous = current;
+
+double actualfeet = widthInMeters ;
+double distancetraveledconversion = distancesph * 3.28084;
+
+double acres = distancetraveledconversion * actualfeet/43560 * hectareconversion;
+
+double roundedacres = Math.round(acres*100.0)/100.0;
+
+pubroundedacres = roundedacres;
+
+mTextView1 = (TextView) findViewById(R.id.textView2);
+
+if(metric == false) {
+mTextView1.setText(roundedacres + " ac");}
+else{mTextView1.setText(roundedacres + " ha");}
+}
+
+float bearing = location.getBearing();
+//version three zoom commented out to fix zoom fight
+double bear = bearing;
+if(orientation == true) {
+
+float zoom = getMap().getCameraPosition().zoom;
+
+CameraPosition cameraPosition =
+new CameraPosition.Builder()
+.target(new LatLng(location.getLatitude(), location.getLongitude()))
+.bearing(bearing)
+.zoom(zoom)
+.build();
+
+getMap().animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+}
+
+navOrigin = (new LatLng(location.getLatitude()   , location.getLongitude()));
+
+navSecPoint = SphericalUtil.computeOffset(point2, 500, bear);
+
+
+
+PolylineOptions navigation = new PolylineOptions()
+.add(navOrigin)
+.add(navSecPoint)
+.color(Color.MAGENTA);
+
+if(navigationalLine !=null) { navigationalLine.remove(); }
+else { navigationalLine = getMap().addPolyline(navigation); }
+
+navigationalLine.remove();
+
+navigationalLine = getMap().addPolyline(navigation);
+
+
+
+if (setIt == true){
+
+
+if(lineoncontrol == true){
+
+heightEngine(); //controls mapFlipper and heightMagnitude for boomWidthmultiplier and returns distances from center line
+boomWidthMultiplier(); //determines which line you are nearest
+arrowControl(); //lightbar engine
+}
+currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+
+
+if (location.hasAccuracy() && location.getAccuracy() <= 30)
+{
+
+if (lastLocation != null && setIt == true)
+{
+ArPoints();
+// PolygonFactory();
+
+}
+
+lastLocation = currentLocation;
+storageEngine();
+}
+
+}
+else {}
+
+}
+
+else { }
+
+
+}
+
+
+
+@Override
+public void onProviderDisabled(String provider) {
+// TODO Auto-generated method stub
+
+}
+
+@Override
+public void onProviderEnabled(String provider) {
+// TODO Auto-generated method stub
+
+}
+
+@Override
+public void onStatusChanged(String provider, int status, Bundle extras) {
+// TODO Auto-generated method stub
+
+}
+
+
+
+public void heightEngine() {
+
+
+
+distToAB = SphericalUtil.computeDistanceBetween(mMarkerA.getPosition(), mMarkerB.getPosition());
+sideA = distToAB;
+sideB = SphericalUtil.computeDistanceBetween(mMarkerB.getPosition(), new LatLng(location.getLatitude(), location.getLongitude()));
+sideC = SphericalUtil.computeDistanceBetween(new LatLng(location.getLatitude(), location.getLongitude()), mMarkerA.getPosition());
+semiPerimeter = (sideA + sideB + sideC) / 2;
+height = Math.round(100.0 * ((2 * Math.sqrt(semiPerimeter * (semiPerimeter - sideA) * (semiPerimeter - sideB) * (semiPerimeter - sideC))) / sideA)) / 100.0;
+
+double  ac = SphericalUtil.computeHeading(mMarkerA.getPosition(), new LatLng(location.getLatitude(), location.getLongitude()));
+
+//convert to degrees positive 0 to 360
+if (ac < 0) { ac = 180 + (180 + ac); }
+
+double ba = SphericalUtil.computeHeading(mMarkerB.getPosition(), mMarkerA.getPosition());
+
+double  ab = SphericalUtil.computeHeading(mMarkerA.getPosition(), mMarkerB.getPosition());
+
+//convert to degrees positive 0 to 360
+if (ba < 0) { ba = 180 + (180 + ba);}
+
+//convert to degrees positive 0 to 360
+if (ab < 0){ab = 180 + (180 + ab);}
+
+
+if (ac <= 180 + ba) {heightMagnitude = true ;} else {
+heightMagnitude = false; }
+
+float   bearing = location.getBearing();
+
+//Map flipper will be set to true if current bearing is opposite the set AB line
+
+double d7 = bearing - ba;
+if (d7 < 0){d7 = -d7;}
+if (d7 > 160 && d7 < 200)
+{
+mapFlipper = true;
+}
+double    d8 = bearing - ab;
+if (d8 < 0){d8 = -d8;}
+if (d8 > 160 && d8 < 200){mapFlipper = false;}
+
+
+}
+
+
+
+public void boomWidthMultiplier() {
+
+if (height < boomWidth - boomWidth / 2)
+{
+boomWidthMultiplier = 0;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+// lineDistanceView.setText(" to: " + distanceFromLines + " " + height + " " +  boomWidthMultiplier + " " + boomWidth );
+}
+if (height > boomWidth - boomWidth / 2 && height < boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 1 ;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//  lineDistanceView.setText(" to: " + distanceFromLines + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 2 * boomWidth - boomWidth / 2 && height < 2 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 2;
+//   double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+// lineDistanceView.setText(" to: " + distanceFromLines + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 3 * boomWidth - boomWidth / 2 && height < 3 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 3;
+//   double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+// lineDistanceView.setText(" to: " + distanceFromLines + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 4 * boomWidth - boomWidth / 2 && height < 4 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 4;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//  lineDistanceView.setText(" to: " + distanceFromLines + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 5 * boomWidth - boomWidth / 2 && height < 5 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 5;
+//   double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines  + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 6 * boomWidth - boomWidth / 2 && height < 6 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 6;
+//   double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//  lineDistanceView.setText(" to: " + distanceFromLines  + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 7 * boomWidth - boomWidth / 2 && height < 7 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 7;
+//   double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+// lineDistanceView.setText(" to: " + distanceFromLines  + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 8 * boomWidth - boomWidth / 2 && height < 8 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 8;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines  + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 9 * boomWidth - boomWidth / 2 && height < 9 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 9;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//  lineDistanceView.setText(" to: " + distanceFromLines  + " " + height + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+if (height > 10 * boomWidth - boomWidth / 2 && height < 10 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 10;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//  lineDistanceView.setText(" to: " + distanceFromLines + " " + height + " " +  boomWidthMultiplier + " " + boomWidth );
+}
+if (height > 11 * boomWidth - boomWidth / 2 && height < 11 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 11;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth);
+}
+
+if (height > 12 * boomWidth - boomWidth / 2 && height < 12 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 12;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 13 * boomWidth - boomWidth / 2 && height < 13 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 13;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 14 * boomWidth - boomWidth / 2 && height < 14 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 14;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 15 * boomWidth - boomWidth / 2 && height < 15 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 15;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 16 * boomWidth - boomWidth / 2 && height < 16 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 16;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 17 * boomWidth - boomWidth / 2 && height < 17 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 17;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 18 * boomWidth - boomWidth / 2 && height < 18 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 18;
+// double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 19 * boomWidth - boomWidth / 2 && height < 19 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 19;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 20 * boomWidth - boomWidth / 2 && height < 20 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 20;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 21 * boomWidth - boomWidth / 2 && height < 21 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 21;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 22 * boomWidth - boomWidth / 2 && height < 22 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 22;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 23 * boomWidth - boomWidth / 2 && height < 23 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 23;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 24 * boomWidth - boomWidth / 2 && height < 24 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 24;
+//  double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+if (height > 25 * boomWidth - boomWidth / 2 && height < 25 * boomWidth + boomWidth / 2)
+{
+boomWidthMultiplier = 25;
+//   double distanceFromLines = Math.abs(height - boomWidthMultiplier * boomWidth);
+//   lineDistanceView.setText(" to: " + distanceFromLines + " " + height  + " " +  boomWidthMultiplier + " " + boomWidth  );
+}
+
+
+
+
+}
+
+public void PolygonFactory() {
+
+
+
+
+LatLng polypoint1 = SphericalUtil.computeOffset(lastLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, 90 + location.getBearing());
+LatLng polypoint2 = SphericalUtil.computeOffset(lastLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, location.getBearing() - 90F);
+LatLng polypoint3 = SphericalUtil.computeOffset(currentLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, 90 + location.getBearing());
+LatLng polypoint4 = SphericalUtil.computeOffset(currentLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, location.getBearing() - 90F);
+
+
+
+
+Polygon polygon = getMap().addPolygon(new PolygonOptions()
+.add(polypoint1, polypoint2, polypoint4, polypoint3)
+.strokeColor(Color.BLUE)
+.strokeWidth(1)
+.fillColor(Color.parseColor("#59FF0000")));
+
+
+
+
+}
+
+public void ArPoints() {
+
+pointNum++;
+
+LatLng polypoint1 = SphericalUtil.computeOffset(lastLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, 90 + location.getBearing());
+LatLng polypoint2 = SphericalUtil.computeOffset(lastLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, location.getBearing() - 90F);
+LatLng polypoint3 = SphericalUtil.computeOffset(currentLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, 90 + location.getBearing());
+LatLng polypoint4 = SphericalUtil.computeOffset(currentLocation, (0.30480000000000002D * widthInMeters * boomconversionfactor) / 2, location.getBearing() - 90F);
+
+
+
+
+Polygon polygon = getMap().addPolygon(new PolygonOptions()
+.add(polypoint1, polypoint2, polypoint4, polypoint3)
+.strokeColor(Color.BLUE)
+.strokeWidth(1)
+.fillColor(Color.parseColor("#59FF0000")));
+
+if(pointNum % 4 == 0) {
+
+getMap().clear();
+
+mapReloadStarter();
+pointArray.add(currentLocation);
+double bearAdded =  location.getBearing();
+bearingArray.add(bearAdded);
+widthArray.add(boomWidth);
+ArPointsFactory();
+
+
+
+
+}
+
+
+
+}
+
+public void ArPointsFactory() {
+int size = pointArray.size();
+LatLng previousPosition = null;
+for(int i=0;i<size;i++){
+
+LatLng currentLocation11 = (LatLng) pointArray.get(i);
+
+double bear = (Double) bearingArray.get(i);
+
+double boomwidth = (Double) widthArray.get(i);
+
+if(previousPosition != null){
+
+LatLng polypoint1 = SphericalUtil.computeOffset(previousPosition, ( boomwidth) / 2, 90 + bear);
+LatLng polypoint2 = SphericalUtil.computeOffset(previousPosition, ( boomwidth ) / 2, bear - 90F);
+LatLng polypoint3 = SphericalUtil.computeOffset(currentLocation11, ( boomwidth ) / 2, 90 + bear);
+LatLng polypoint4 = SphericalUtil.computeOffset(currentLocation11, ( boomwidth) / 2, bear - 90F);
+
+Polygon polygon = getMap().addPolygon(new PolygonOptions()
+.add(polypoint1, polypoint2, polypoint4, polypoint3)
+.strokeColor(Color.BLUE)
+.strokeWidth(1)
+.fillColor(Color.parseColor("#59FF0000")));
+
+previousPosition = currentLocation11;
+
+}
+else { previousPosition = currentLocation11;}
+
+
+}
+
+
+
+
+
+
+}
+
+
+
+public void arrowControl()
+{
+ImageView image= (ImageView) findViewById(R.id.imageView1);
+
+if (mapFlipper==true)
+{
+if (heightMagnitude==true)
+{
+if (height >= boomWidth * boomWidthMultiplier - 0.1 && height <= 0.1 + boomWidth * boomWidthMultiplier)
+{
+
+
+image.setImageResource(R.drawable.lightbarup);
+
+//up
+}
+if (height < boomWidth * boomWidthMultiplier - 0.1 && height > boomWidth * boomWidthMultiplier - 0.5)
+{
+image.setImageResource(R.drawable.lightbarrt1); //right
+}
+if (height < boomWidth * boomWidthMultiplier - 0.5 && height > boomWidth * boomWidthMultiplier - 1.0)
+{
+image.setImageResource(R.drawable.lightbarrt2);
+}
+if (height < boomWidth * boomWidthMultiplier - 1.0 && height > boomWidth * boomWidthMultiplier - 1.5)
+{
+image.setImageResource(R.drawable.lightbarrt3);
+}
+if (height < boomWidth * boomWidthMultiplier - 1.5 && height > boomWidth * (1 + boomWidthMultiplier) - boomWidth / 2)
+{
+image.setImageResource(R.drawable.lightbarrt4);
+}
+if (height > 0.1 + boomWidth * boomWidthMultiplier && height < 0.5D + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarlft1); //left1
+}
+if (height > 0.5 + boomWidth * boomWidthMultiplier && height < 1.0 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarlft2);
+}
+if (height > 1.0 + boomWidth * boomWidthMultiplier && height < 1.5 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarlft3);
+}
+if (height > 1.5 + boomWidth * boomWidthMultiplier && height < boomWidth * (1 + boomWidthMultiplier) - boomWidth / 2)
+{
+image.setImageResource(R.drawable.lightbarlft4);
+}
+}
+if (heightMagnitude==false)
+{
+if (height >= boomWidth * boomWidthMultiplier - 0.1 && height <= 0.1 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarup); //up
+}
+if (height < boomWidth * boomWidthMultiplier - 0.1 && height > boomWidth * boomWidthMultiplier - 0.5)
+{
+image.setImageResource(R.drawable.lightbarlft1); //left1
+}
+if (height < boomWidth * boomWidthMultiplier - 0.5 && height > boomWidth * boomWidthMultiplier - 1.0)
+{
+image.setImageResource(R.drawable.lightbarlft2);
+}
+if (height < boomWidth * boomWidthMultiplier - 1.0 && height > boomWidth * boomWidthMultiplier - 1.5)
+{
+image.setImageResource(R.drawable.lightbarlft3);
+}
+if (height < boomWidth * boomWidthMultiplier - 1.5 && height > boomWidth * (1 + boomWidthMultiplier) - boomWidth / 2)
+{
+image.setImageResource(R.drawable.lightbarlft4);
+}
+if (height > 0.1 + boomWidth * boomWidthMultiplier && height < 0.5 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarrt1); //right1
+}
+if (height > 0.5 + boomWidth * boomWidthMultiplier && height < 1.0 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarrt2);
+}
+if (height > 1.0 + boomWidth * boomWidthMultiplier && height < 1.5 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarrt3);
+}
+if (height > 1.5 + boomWidth * boomWidthMultiplier && height < boomWidth * (1 + boomWidthMultiplier) - boomWidth / 2)
+{
+image.setImageResource(R.drawable.lightbarrt4);
+}
+}
+}
+if (mapFlipper==false)
+{
+if (heightMagnitude==true)
+{
+if (height >= boomWidth * boomWidthMultiplier - 0.1 && height <= 0.1 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarup); //up
+}
+if (height < boomWidth * boomWidthMultiplier - 0.1 && height > boomWidth * boomWidthMultiplier - 0.5)
+{
+image.setImageResource(R.drawable.lightbarlft1);//left1
+}
+if (height < boomWidth * boomWidthMultiplier - 0.5 && height > boomWidth * boomWidthMultiplier - 1.0)
+{
+image.setImageResource(R.drawable.lightbarlft2);
+}
+if (height < boomWidth * boomWidthMultiplier - 1.0 && height > boomWidth * boomWidthMultiplier - 1.5)
+{
+image.setImageResource(R.drawable.lightbarlft3);
+}
+if (height < boomWidth * boomWidthMultiplier - 1.5 && height > -boomWidth * (1 + boomWidthMultiplier) + boomWidth / 2)
+{
+image.setImageResource(R.drawable.lightbarlft4);
+}
+if (height > 0.1 + boomWidth * boomWidthMultiplier && height < 0.5 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarrt1);//right1
+}
+if (height > 0.5 + boomWidth * boomWidthMultiplier && height < 1.0 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarrt2);
+}
+if (height > 1.0 + boomWidth * boomWidthMultiplier && height < 1.5 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarrt3);
+}
+if (height > 1.5 + boomWidth * boomWidthMultiplier && height < boomWidth * (1 + boomWidthMultiplier) - boomWidth / 2)
+{
+image.setImageResource(R.drawable.lightbarrt4);
+}
+}
+if (heightMagnitude==false)
+{
+if (height >= boomWidth * boomWidthMultiplier - 0.1 && height <= 0.1 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarup);//up
+}
+if (height < boomWidth * boomWidthMultiplier - 0.1 && height > boomWidth * boomWidthMultiplier - 0.5)
+{
+image.setImageResource(R.drawable.lightbarrt1);//right1
+}
+if (height < boomWidth * boomWidthMultiplier - 0.5 && height > boomWidth * boomWidthMultiplier - 1.0)
+{
+image.setImageResource(R.drawable.lightbarrt2);
+}
+if (height < boomWidth * boomWidthMultiplier - 1.0 && height > boomWidth * boomWidthMultiplier - 1.5)
+{
+image.setImageResource(R.drawable.lightbarrt3);
+}
+if (height < boomWidth * boomWidthMultiplier - 1.5 && height > -boomWidth * (1 + boomWidthMultiplier) + boomWidth / 2)
+{
+image.setImageResource(R.drawable.lightbarrt4);
+}
+if (height > 0.1 + boomWidth * boomWidthMultiplier && height < 0.5 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarlft1);//left1
+}
+if (height > 0.5 + boomWidth * boomWidthMultiplier && height < 1.0 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarlft2);
+}
+if (height > 1.0 + boomWidth * boomWidthMultiplier && height < 1.5 + boomWidth * boomWidthMultiplier)
+{
+image.setImageResource(R.drawable.lightbarlft3);
+}
+if (height > 1.5 + boomWidth * boomWidthMultiplier && height < boomWidth * (1 + boomWidthMultiplier) - boomWidth / 2)
+{
+image.setImageResource(R.drawable.lightbarlft4);
+}
+}
+}
+}
+
+public void storageEngine() {
+
+
+
+// Creating an instance of ContentValues
+ContentValues contentValues = new ContentValues();
+
+location = locationmanager
+.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+
+
+contentValues.put(LocationsDB.FIELD_NAME, fieldName );
+
+// Setting latitude in ContentValues
+contentValues.put(LocationsDB.FIELD_LAT, location.getLatitude() );
+
+
+
+// Setting longitude in ContentValues
+contentValues.put(LocationsDB.FIELD_LNG, location.getLongitude());
+
+//  contentValues.put(LocationsDB.FIELD_NAME, textView.getasdlkfjaslfkj);
+
+
+contentValues.put(LocationsDB.FIELD_BEAR, location.getBearing());
+
+contentValues.put(LocationsDB.FIELD_BOOMWIDTH, 0.30480000000000002D * widthInMeters * boomconversionfactor);
+
+contentValues.put(LocationsDB.FIELD_COMMENTS, fieldComments);
+
+contentValues.put(LocationsDB.ACRES, pubroundedacres);
+
+contentValues.put(LocationsDB.TODAYS_DATE, getDateTime());
+
+
+// Setting zoom in ContentValues
+contentValues.put(LocationsDB.FIELD_ZOOM, getMap().getCameraPosition().zoom);
+
+// Creating an instance of LocationInsertTask
+LocationInsertTask insertTask = new LocationInsertTask();
+
+// Storing the latitude, longitude and zoom level to SQLite database
+insertTask.execute(contentValues);
+
+
+
+//gonna need bearing and latlng values getBearing and getlocation
+
+
+
+}
+
+private class LocationInsertTask extends AsyncTask<ContentValues, Void, Void>{
+@Override
+protected Void doInBackground(ContentValues... contentValues) {
+
+// Setting up values to insert the clicked location into SQLite database
+getContentResolver().insert(LocationsContentProvider.CONTENT_URI, contentValues[0]);
+
+//  getSupportLoaderManager().initLoader(0, null, this);
+
+return null;
+}
+}
+
+
+
+
+
+
+
+
+
+public void onLoadFinished(Loader<Cursor> arg0,
+Cursor arg1) {
+
+// Number of locations available in the SQLite database table
+locationCount = arg1.getCount();
+// int loadingMessage = arg1.getCount();
+
+// Move the current record pointer to the first row of the table
+arg1.moveToFirst();
+
+//TextView  mLoadView = (TextView) findViewById(R.id.textView1);
+
+for(int i=0;i<locationCount;i++){
+
+
+// Get the latitude
+
+
+name = arg1.getString(arg1.getColumnIndex(LocationsDB.FIELD_NAME));
+
+lacomments = arg1.getString(arg1.getColumnIndex(LocationsDB.FIELD_COMMENTS));
+
+lat = arg1.getDouble(arg1.getColumnIndex(LocationsDB.FIELD_LAT));
+
+// Get the longitude
+lng = arg1.getDouble(arg1.getColumnIndex(LocationsDB.FIELD_LNG));
+
+bear = arg1.getDouble(arg1.getColumnIndex(LocationsDB.FIELD_BEAR));
+
+boomwidth = arg1.getDouble(arg1.getColumnIndex(LocationsDB.FIELD_BOOMWIDTH) );
+
+
+
+// Get the zoom level
+
+
+// Creating an instance of LatLng to plot the location in Google Maps
+locationEngine = new LatLng(lat, lng);
+
+if(i % 3 == 0) {
+pointArray.add(locationEngine);
+bearingArray.add(bear);
+widthArray.add(boomwidth);
+}
+
+/*
+MarkerOptions markerOptions = new MarkerOptions();
+
+// Setting latitude and longitude for the marker
+markerOptions.position(locationEngine);
+
+// Adding marker on the Google Map
+getMap().addMarker(markerOptions);
+
+*/
+
+
+// Drawing the marker in the Google Maps
+//drawPolygon(locationEngine, previousPoint, boomwidth, bear);
+
+
+// Traverse the pointer to the next row
+arg1.moveToNext();
+
+previousPoint = locationEngine;
+
+//display map loading
+
+// mLoadView.setText("POINTS LOADING");
+
+
+
+
+
+
+}
+
+ArPointsFactory();
+
+if(locationCount>0){
+// Moving CameraPosition to last clicked position
+getMap().moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat,lng)));
+
+
+
+}
+
+
+}
+
+
+private void drawPolygon(LatLng point,LatLng previousPoint, double boomwidth, double bearing){
+
+//make polygons here
+//do something about this lastLocation and currentLocation
+
+if(previousPoint != null){
+
+
+
+LatLng polypoint1 = SphericalUtil.computeOffset(previousPoint, (0.30480000000000002D * boomwidth * boomconversionfactor) / 2, 90 + bear);
+LatLng polypoint2 = SphericalUtil.computeOffset(previousPoint, (0.30480000000000002D * boomwidth * boomconversionfactor) / 2, bear - 90F);
+LatLng polypoint3 = SphericalUtil.computeOffset(locationEngine, (0.30480000000000002D * boomwidth * boomconversionfactor) / 2, 90 + bear);
+LatLng polypoint4 = SphericalUtil.computeOffset(locationEngine, (0.30480000000000002D * boomwidth * boomconversionfactor) / 2, bear - 90F);
+
+Polygon polygon = getMap().addPolygon(new PolygonOptions()
+.add(polypoint1, polypoint2, polypoint4, polypoint3)
+.strokeColor(Color.RED)
+.fillColor(Color.BLUE));
+
+
+// Creating an instance of MarkerOptions
+} // end of doesn't equal null
+}
+
+
+
+
+
+public void onLoaderReset(Loader<Cursor> arg0) {
+// TODO Auto-generated method stub
+}
+
+
+
+
+
+
+
+public void mapStarter() {
+// TODO Auto-generated method stub
+
+//Make all of this happen after hitting start
+
+
+
+if(location!=null) {
+
+heading = SphericalUtil.computeHeading(mMarkerA.getPosition(), mMarkerB.getPosition());
+
+headingline = SphericalUtil.computeHeading(mMarkerA.getPosition(), mMarkerB.getPosition());
+
+bearingorientation = (float) headingline;
+
+
+
+LatLng markerCPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), boomWidth * heighthalfer, heading + 90);
+
+mMarkerC = getMap().addMarker(new MarkerOptions().position(markerCPosition).draggable(true).visible(false));
+
+
+LatLng markerDPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(), boomWidth * heighthalfer, heading + 90);
+
+mMarkerD = getMap().addMarker(new MarkerOptions().position(markerDPosition).draggable(true).visible(false));
+
+
+LatLng markerEPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 2 * boomWidth, heading + 90);
+
+mMarkerE = getMap().addMarker(new MarkerOptions().position(markerEPosition).draggable(true).visible(false));
+
+
+LatLng markerFPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(), 2 * boomWidth, heading + 90);
+
+mMarkerF = getMap().addMarker(new MarkerOptions().position(markerFPosition).draggable(true).visible(false));
+
+
+
+LatLng markerGPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 3 * boomWidth, heading + 90);
+
+mMarkerG = getMap().addMarker(new MarkerOptions().position(markerGPosition).draggable(true).visible(false));
+
+
+LatLng markerHPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(), 3 * boomWidth, heading + 90);
+
+mMarkerH = getMap().addMarker(new MarkerOptions().position(markerHPosition).draggable(true).visible(false));
+
+
+
+LatLng markerA1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 4 * boomWidth, heading + 90);
+
+mMarkerA1 = getMap().addMarker(new MarkerOptions().position(markerA1Position).draggable(true).visible(false));
+
+
+LatLng markerB1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 4 * boomWidth, heading + 90);
+
+mMarkerB1 = getMap().addMarker(new MarkerOptions().position(markerB1Position).draggable(true).visible(false));
+
+
+
+LatLng markerC1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 5 * boomWidth, heading + 90);
+
+mMarkerC1 = getMap().addMarker(new MarkerOptions().position(markerC1Position).draggable(true).visible(false));
+
+
+LatLng markerD1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 5 * boomWidth, heading + 90);
+
+mMarkerD1 = getMap().addMarker(new MarkerOptions().position(markerD1Position).draggable(true).visible(false));
+
+
+
+LatLng markerE1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 6 * boomWidth, heading + 90);
+
+mMarkerE1 = getMap().addMarker(new MarkerOptions().position(markerE1Position).draggable(true).visible(false));
+
+
+LatLng markerF1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 6 * boomWidth, heading + 90);
+
+mMarkerF1 = getMap().addMarker(new MarkerOptions().position(markerF1Position).draggable(true).visible(false));
+
+
+
+LatLng markerG1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 7 * boomWidth, heading + 90);
+
+mMarkerG1 = getMap().addMarker(new MarkerOptions().position(markerG1Position).draggable(true).visible(false));
+
+
+LatLng markerH1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 7 * boomWidth, heading + 90);
+
+mMarkerH1 = getMap().addMarker(new MarkerOptions().position(markerH1Position).draggable(true).visible(false));
+
+
+
+LatLng markerI1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 8 * boomWidth, heading + 90);
+
+mMarkerI1 = getMap().addMarker(new MarkerOptions().position(markerI1Position).draggable(true).visible(false));
+
+
+LatLng markerJ1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 8 * boomWidth, heading + 90);
+
+mMarkerJ1 = getMap().addMarker(new MarkerOptions().position(markerJ1Position).draggable(true).visible(false));
+
+
+
+LatLng markerK1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 9 * boomWidth, heading + 90);
+
+mMarkerK1 = getMap().addMarker(new MarkerOptions().position(markerK1Position).draggable(true).visible(false));
+
+LatLng markerL1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 9 * boomWidth, heading + 90);
+
+mMarkerL1 = getMap().addMarker(new MarkerOptions().position(markerL1Position).draggable(true).visible(false));
+
+
+
+LatLng markerM1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 10 * boomWidth, heading + 90);
+
+mMarkerM1 = getMap().addMarker(new MarkerOptions().position(markerM1Position).draggable(true).visible(false));
+
+LatLng markerN1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 10 * boomWidth, heading + 90);
+
+mMarkerN1 = getMap().addMarker(new MarkerOptions().position(markerN1Position).draggable(true).visible(false));
+
+
+
+LatLng markerO1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 11 * boomWidth, heading + 90);
+
+mMarkerO1 = getMap().addMarker(new MarkerOptions().position(markerO1Position).draggable(true).visible(false));
+
+LatLng markerP1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 11 * boomWidth, heading + 90);
+
+mMarkerP1 = getMap().addMarker(new MarkerOptions().position(markerP1Position).draggable(true).visible(false));
+
+
+LatLng markerO12Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 12 * boomWidth, heading + 90);
+
+mMarkerO12 = getMap().addMarker(new MarkerOptions().position(markerO12Position).draggable(true).visible(false));
+
+LatLng markerP12Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 12 * boomWidth, heading + 90);
+
+mMarkerP12 = getMap().addMarker(new MarkerOptions().position(markerP12Position).draggable(true).visible(false));
+
+
+LatLng markerO13Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 13 * boomWidth, heading + 90);
+
+mMarkerO13 = getMap().addMarker(new MarkerOptions().position(markerO13Position).draggable(true).visible(false));
+
+LatLng markerP13Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 13 * boomWidth, heading + 90);
+
+mMarkerP13 = getMap().addMarker(new MarkerOptions().position(markerP13Position).draggable(true).visible(false));
+
+
+LatLng markerO14Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 14 * boomWidth, heading + 90);
+
+mMarkerO14 = getMap().addMarker(new MarkerOptions().position(markerO14Position).draggable(true).visible(false));
+
+LatLng markerP14Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 14 * boomWidth, heading + 90);
+
+mMarkerP14 = getMap().addMarker(new MarkerOptions().position(markerP14Position).draggable(true).visible(false));
+
+
+LatLng markerO15Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 15 * boomWidth, heading + 90);
+
+mMarkerO15 = getMap().addMarker(new MarkerOptions().position(markerO15Position).draggable(true).visible(false));
+
+LatLng markerP15Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 15 * boomWidth, heading + 90);
+
+mMarkerP15 = getMap().addMarker(new MarkerOptions().position(markerP15Position).draggable(true).visible(false));
+
+
+LatLng markerO16Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 16 * boomWidth, heading + 90);
+
+mMarkerO16 = getMap().addMarker(new MarkerOptions().position(markerO16Position).draggable(true).visible(false));
+
+LatLng markerP16Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 16 * boomWidth, heading + 90);
+
+mMarkerP16 = getMap().addMarker(new MarkerOptions().position(markerP16Position).draggable(true).visible(false));
+
+
+LatLng markerO17Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 17 * boomWidth, heading + 90);
+
+mMarkerO17 = getMap().addMarker(new MarkerOptions().position(markerO17Position).draggable(true).visible(false));
+
+LatLng markerP17Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 17 * boomWidth, heading + 90);
+
+mMarkerP17 = getMap().addMarker(new MarkerOptions().position(markerP17Position).draggable(true).visible(false));
+
+
+LatLng markerO18Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 18 * boomWidth, heading + 90);
+
+mMarkerO18 = getMap().addMarker(new MarkerOptions().position(markerO18Position).draggable(true).visible(false));
+
+LatLng markerP18Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 18 * boomWidth, heading + 90);
+
+mMarkerP18 = getMap().addMarker(new MarkerOptions().position(markerP18Position).draggable(true).visible(false));
+
+
+LatLng markerO19Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 19 * boomWidth, heading + 90);
+
+mMarkerO19 = getMap().addMarker(new MarkerOptions().position(markerO19Position).draggable(true).visible(false));
+
+LatLng markerP19Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 19 * boomWidth, heading + 90);
+
+mMarkerP19 = getMap().addMarker(new MarkerOptions().position(markerP19Position).draggable(true).visible(false));
+
+
+LatLng markerO120Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 20 * boomWidth, heading + 90);
+
+mMarkerO120 = getMap().addMarker(new MarkerOptions().position(markerO120Position).draggable(true).visible(false));
+
+LatLng markerP120Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 20 * boomWidth, heading + 90);
+
+mMarkerP120 = getMap().addMarker(new MarkerOptions().position(markerP120Position).draggable(true).visible(false));
+
+
+
+
+//Negative Direction
+
+LatLng markerIPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(),  boomWidth * heighthalfer, heading - 90);
+
+mMarkerI = getMap().addMarker(new MarkerOptions().position(markerIPosition).draggable(true).visible(false));
+
+
+LatLng markerJPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  boomWidth * heighthalfer, heading - 90);
+
+mMarkerJ = getMap().addMarker(new MarkerOptions().position(markerJPosition).draggable(true).visible(false));
+
+
+
+LatLng markerKPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 2 * boomWidth, heading - 90);
+
+mMarkerK = getMap().addMarker(new MarkerOptions().position(markerKPosition).draggable(true).visible(false));
+
+
+LatLng markerLPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  2* boomWidth, heading - 90);
+
+mMarkerL = getMap().addMarker(new MarkerOptions().position(markerLPosition).draggable(true).visible(false));
+
+
+
+LatLng markerMPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 3 * boomWidth, heading - 90);
+
+mMarkerM = getMap().addMarker(new MarkerOptions().position(markerMPosition).draggable(true).visible(false));
+
+
+LatLng markerNPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  3 * boomWidth, heading - 90);
+
+mMarkerN = getMap().addMarker(new MarkerOptions().position(markerNPosition).draggable(true).visible(false));
+
+
+
+LatLng markerOPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 4 * boomWidth, heading - 90);
+
+mMarkerO = getMap().addMarker(new MarkerOptions().position(markerOPosition).draggable(true).visible(false));
+
+
+LatLng markerPPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  4 * boomWidth, heading - 90);
+
+mMarkerP = getMap().addMarker(new MarkerOptions().position(markerPPosition).draggable(true).visible(false));
+
+
+
+LatLng markerQPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 5 * boomWidth, heading - 90);
+
+mMarkerQ = getMap().addMarker(new MarkerOptions().position(markerQPosition).draggable(true).visible(false));
+
+
+LatLng markerRPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  5 * boomWidth, heading - 90);
+
+mMarkerR = getMap().addMarker(new MarkerOptions().position(markerRPosition).draggable(true).visible(false));
+
+
+
+LatLng markerSPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 6 * boomWidth, heading - 90);
+
+mMarkerS = getMap().addMarker(new MarkerOptions().position(markerSPosition).draggable(true).visible(false));
+
+
+LatLng markerTPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  6 * boomWidth, heading - 90);
+
+mMarkerT = getMap().addMarker(new MarkerOptions().position(markerTPosition).draggable(true).visible(false));
+
+
+LatLng markerUPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 7 * boomWidth, heading - 90);
+
+mMarkerU = getMap().addMarker(new MarkerOptions().position(markerUPosition).draggable(true).visible(false));
+
+
+LatLng markerVPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  7 * boomWidth, heading - 90);
+
+mMarkerV = getMap().addMarker(new MarkerOptions().position(markerVPosition).draggable(true).visible(false));
+
+
+
+LatLng markerWPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 8 * boomWidth, heading - 90);
+
+mMarkerW = getMap().addMarker(new MarkerOptions().position(markerWPosition).draggable(true).visible(false));
+
+
+LatLng markerXPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  8 * boomWidth, heading - 90);
+
+mMarkerX = getMap().addMarker(new MarkerOptions().position(markerXPosition).draggable(true).visible(false));
+
+
+
+LatLng markerYPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 9 * boomWidth, heading - 90);
+
+mMarkerY = getMap().addMarker(new MarkerOptions().position(markerYPosition).draggable(true).visible(false));
+
+
+LatLng markerZPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  9 * boomWidth, heading - 90);
+
+mMarkerZ = getMap().addMarker(new MarkerOptions().position(markerZPosition).draggable(true).visible(false));
+
+
+
+LatLng markerA2Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 10 * boomWidth, heading - 90);
+
+mMarkerA2 = getMap().addMarker(new MarkerOptions().position(markerA2Position).draggable(true).visible(false));
+
+LatLng markerB2Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  10 * boomWidth, heading - 90);
+
+mMarkerB2 = getMap().addMarker(new MarkerOptions().position(markerB2Position).draggable(true).visible(false));
+
+
+
+LatLng markerC2Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 11 * boomWidth, heading - 90);
+
+mMarkerC2 = getMap().addMarker(new MarkerOptions().position(markerC2Position).draggable(true).visible(false));
+
+LatLng markerD2Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  11 * boomWidth, heading - 90);
+
+mMarkerD2 = getMap().addMarker(new MarkerOptions().position(markerD2Position).draggable(true).visible(false));
+
+
+
+LatLng markerE2Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 12 * boomWidth, heading - 90);
+
+mMarkerE2 = getMap().addMarker(new MarkerOptions().position(markerE2Position).draggable(true).visible(false));
+
+LatLng markerF2Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  12 * boomWidth, heading - 90);
+
+mMarkerF2 = getMap().addMarker(new MarkerOptions().position(markerF2Position).draggable(true).visible(false));
+
+LatLng markerY13Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 13 * boomWidth, heading - 90);
+
+mMarkerY13 = getMap().addMarker(new MarkerOptions().position(markerY13Position).draggable(true).visible(false));
+
+LatLng markerZ13Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  13 * boomWidth, heading - 90);
+
+mMarkerZ13 = getMap().addMarker(new MarkerOptions().position(markerZ13Position).draggable(true).visible(false));
+
+LatLng markerY14Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 14 * boomWidth, heading - 90);
+
+mMarkerY14 = getMap().addMarker(new MarkerOptions().position(markerY14Position).draggable(true).visible(false));
+
+LatLng markerZ14Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  14 * boomWidth, heading - 90);
+
+mMarkerZ14 = getMap().addMarker(new MarkerOptions().position(markerZ14Position).draggable(true).visible(false));
+
+LatLng markerY15Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 15 * boomWidth, heading - 90);
+
+mMarkerY15 = getMap().addMarker(new MarkerOptions().position(markerY15Position).draggable(true).visible(false));
+
+LatLng markerZ15Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  15 * boomWidth, heading - 90);
+
+mMarkerZ15 = getMap().addMarker(new MarkerOptions().position(markerZ15Position).draggable(true).visible(false));
+
+LatLng markerY16Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 16 * boomWidth, heading - 90);
+
+mMarkerY16 = getMap().addMarker(new MarkerOptions().position(markerY16Position).draggable(true).visible(false));
+
+LatLng markerZ16Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  16 * boomWidth, heading - 90);
+
+mMarkerZ16 = getMap().addMarker(new MarkerOptions().position(markerZ16Position).draggable(true).visible(false));
+
+LatLng markerY17Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 17 * boomWidth, heading - 90);
+
+mMarkerY17 = getMap().addMarker(new MarkerOptions().position(markerY17Position).draggable(true).visible(false));
+
+LatLng markerZ17Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  17 * boomWidth, heading - 90);
+
+mMarkerZ17 = getMap().addMarker(new MarkerOptions().position(markerZ17Position).draggable(true).visible(false));
+
+LatLng markerY18Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 18 * boomWidth, heading - 90);
+
+mMarkerY18 = getMap().addMarker(new MarkerOptions().position(markerY18Position).draggable(true).visible(false));
+
+LatLng markerZ18Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  18 * boomWidth, heading - 90);
+
+mMarkerZ18 = getMap().addMarker(new MarkerOptions().position(markerZ18Position).draggable(true).visible(false));
+
+LatLng markerY19Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 19 * boomWidth, heading - 90);
+
+mMarkerY19 = getMap().addMarker(new MarkerOptions().position(markerY19Position).draggable(true).visible(false));
+
+LatLng markerZ19Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  19 * boomWidth, heading - 90);
+
+mMarkerZ19 = getMap().addMarker(new MarkerOptions().position(markerZ19Position).draggable(true).visible(false));
+
+LatLng markerY120Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 20 * boomWidth, heading - 90);
+
+mMarkerY120 = getMap().addMarker(new MarkerOptions().position(markerY120Position).draggable(true).visible(false));
+
+LatLng markerZ120Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  20 * boomWidth, heading - 90);
+
+mMarkerZ120 = getMap().addMarker(new MarkerOptions().position(markerZ120Position).draggable(true).visible(false));
+
+
+mPolylineB = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineC = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineD = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineE = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineF = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineG = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineH = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineI = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineJ = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineK = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineL = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineN = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineO = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineP = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineQ = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineR = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineS = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineT = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineU = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineV = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineW = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineX = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+
+mPolylineSecSideA12 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA13 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA14 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA15 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA16 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA17 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA18 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA19 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA20 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+
+
+mPolylineM13 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM14 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM15 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM16 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM17 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM18 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM19 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM20 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+
+
+updatePolyline();
+CameraPosition cameraPosition = new CameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 17, 0, bearingorientation);
+
+getMap().animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+
+
+
+}
+
+else{
+
+
+Toast.makeText(getApplicationContext(), "No GPS Signal",
+Toast.LENGTH_LONG).show(); }
+
+
+
+
+
+
+}
+
+public void mapReloadStarter() {
+// TODO Auto-generated method stub
+
+//Make all of this happen after hitting start
+
+
+
+if(location!=null) {
+
+if(lineoncontrol != false){
+
+heading = SphericalUtil.computeHeading(mMarkerA.getPosition(), mMarkerB.getPosition());
+
+headingline = SphericalUtil.computeHeading(mMarkerA.getPosition(), mMarkerB.getPosition());
+
+bearingorientation = (float) headingline;
+
+
+
+LatLng markerCPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), boomWidth * heighthalfer, heading + 90);
+
+mMarkerC = getMap().addMarker(new MarkerOptions().position(markerCPosition).draggable(true).visible(false));
+
+
+LatLng markerDPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(), boomWidth * heighthalfer, heading + 90);
+
+mMarkerD = getMap().addMarker(new MarkerOptions().position(markerDPosition).draggable(true).visible(false));
+
+
+LatLng markerEPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 2 * boomWidth, heading + 90);
+
+mMarkerE = getMap().addMarker(new MarkerOptions().position(markerEPosition).draggable(true).visible(false));
+
+
+LatLng markerFPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(), 2 * boomWidth, heading + 90);
+
+mMarkerF = getMap().addMarker(new MarkerOptions().position(markerFPosition).draggable(true).visible(false));
+
+
+
+LatLng markerGPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 3 * boomWidth, heading + 90);
+
+mMarkerG = getMap().addMarker(new MarkerOptions().position(markerGPosition).draggable(true).visible(false));
+
+
+LatLng markerHPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(), 3 * boomWidth, heading + 90);
+
+mMarkerH = getMap().addMarker(new MarkerOptions().position(markerHPosition).draggable(true).visible(false));
+
+
+
+LatLng markerA1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 4 * boomWidth, heading + 90);
+
+mMarkerA1 = getMap().addMarker(new MarkerOptions().position(markerA1Position).draggable(true).visible(false));
+
+
+LatLng markerB1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 4 * boomWidth, heading + 90);
+
+mMarkerB1 = getMap().addMarker(new MarkerOptions().position(markerB1Position).draggable(true).visible(false));
+
+
+
+LatLng markerC1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 5 * boomWidth, heading + 90);
+
+mMarkerC1 = getMap().addMarker(new MarkerOptions().position(markerC1Position).draggable(true).visible(false));
+
+
+LatLng markerD1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 5 * boomWidth, heading + 90);
+
+mMarkerD1 = getMap().addMarker(new MarkerOptions().position(markerD1Position).draggable(true).visible(false));
+
+
+
+LatLng markerE1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 6 * boomWidth, heading + 90);
+
+mMarkerE1 = getMap().addMarker(new MarkerOptions().position(markerE1Position).draggable(true).visible(false));
+
+
+LatLng markerF1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 6 * boomWidth, heading + 90);
+
+mMarkerF1 = getMap().addMarker(new MarkerOptions().position(markerF1Position).draggable(true).visible(false));
+
+
+
+LatLng markerG1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 7 * boomWidth, heading + 90);
+
+mMarkerG1 = getMap().addMarker(new MarkerOptions().position(markerG1Position).draggable(true).visible(false));
+
+
+LatLng markerH1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 7 * boomWidth, heading + 90);
+
+mMarkerH1 = getMap().addMarker(new MarkerOptions().position(markerH1Position).draggable(true).visible(false));
+
+
+
+LatLng markerI1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 8 * boomWidth, heading + 90);
+
+mMarkerI1 = getMap().addMarker(new MarkerOptions().position(markerI1Position).draggable(true).visible(false));
+
+
+LatLng markerJ1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 8 * boomWidth, heading + 90);
+
+mMarkerJ1 = getMap().addMarker(new MarkerOptions().position(markerJ1Position).draggable(true).visible(false));
+
+
+
+LatLng markerK1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 9 * boomWidth, heading + 90);
+
+mMarkerK1 = getMap().addMarker(new MarkerOptions().position(markerK1Position).draggable(true).visible(false));
+
+LatLng markerL1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 9 * boomWidth, heading + 90);
+
+mMarkerL1 = getMap().addMarker(new MarkerOptions().position(markerL1Position).draggable(true).visible(false));
+
+
+
+LatLng markerM1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 10 * boomWidth, heading + 90);
+
+mMarkerM1 = getMap().addMarker(new MarkerOptions().position(markerM1Position).draggable(true).visible(false));
+
+LatLng markerN1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 10 * boomWidth, heading + 90);
+
+mMarkerN1 = getMap().addMarker(new MarkerOptions().position(markerN1Position).draggable(true).visible(false));
+
+
+
+LatLng markerO1Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 11 * boomWidth, heading + 90);
+
+mMarkerO1 = getMap().addMarker(new MarkerOptions().position(markerO1Position).draggable(true).visible(false));
+
+LatLng markerP1Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 11 * boomWidth, heading + 90);
+
+mMarkerP1 = getMap().addMarker(new MarkerOptions().position(markerP1Position).draggable(true).visible(false));
+
+
+LatLng markerO12Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 12 * boomWidth, heading + 90);
+
+mMarkerO12 = getMap().addMarker(new MarkerOptions().position(markerO12Position).draggable(true).visible(false));
+
+LatLng markerP12Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 12 * boomWidth, heading + 90);
+
+mMarkerP12 = getMap().addMarker(new MarkerOptions().position(markerP12Position).draggable(true).visible(false));
+
+
+LatLng markerO13Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 13 * boomWidth, heading + 90);
+
+mMarkerO13 = getMap().addMarker(new MarkerOptions().position(markerO13Position).draggable(true).visible(false));
+
+LatLng markerP13Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 13 * boomWidth, heading + 90);
+
+mMarkerP13 = getMap().addMarker(new MarkerOptions().position(markerP13Position).draggable(true).visible(false));
+
+
+LatLng markerO14Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 14 * boomWidth, heading + 90);
+
+mMarkerO14 = getMap().addMarker(new MarkerOptions().position(markerO14Position).draggable(true).visible(false));
+
+LatLng markerP14Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 14 * boomWidth, heading + 90);
+
+mMarkerP14 = getMap().addMarker(new MarkerOptions().position(markerP14Position).draggable(true).visible(false));
+
+
+LatLng markerO15Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 15 * boomWidth, heading + 90);
+
+mMarkerO15 = getMap().addMarker(new MarkerOptions().position(markerO15Position).draggable(true).visible(false));
+
+LatLng markerP15Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 15 * boomWidth, heading + 90);
+
+mMarkerP15 = getMap().addMarker(new MarkerOptions().position(markerP15Position).draggable(true).visible(false));
+
+
+LatLng markerO16Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 16 * boomWidth, heading + 90);
+
+mMarkerO16 = getMap().addMarker(new MarkerOptions().position(markerO16Position).draggable(true).visible(false));
+
+LatLng markerP16Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 16 * boomWidth, heading + 90);
+
+mMarkerP16 = getMap().addMarker(new MarkerOptions().position(markerP16Position).draggable(true).visible(false));
+
+
+LatLng markerO17Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 17 * boomWidth, heading + 90);
+
+mMarkerO17 = getMap().addMarker(new MarkerOptions().position(markerO17Position).draggable(true).visible(false));
+
+LatLng markerP17Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 17 * boomWidth, heading + 90);
+
+mMarkerP17 = getMap().addMarker(new MarkerOptions().position(markerP17Position).draggable(true).visible(false));
+
+
+LatLng markerO18Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 18 * boomWidth, heading + 90);
+
+mMarkerO18 = getMap().addMarker(new MarkerOptions().position(markerO18Position).draggable(true).visible(false));
+
+LatLng markerP18Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 18 * boomWidth, heading + 90);
+
+mMarkerP18 = getMap().addMarker(new MarkerOptions().position(markerP18Position).draggable(true).visible(false));
+
+
+LatLng markerO19Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 19 * boomWidth, heading + 90);
+
+mMarkerO19 = getMap().addMarker(new MarkerOptions().position(markerO19Position).draggable(true).visible(false));
+
+LatLng markerP19Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 19 * boomWidth, heading + 90);
+
+mMarkerP19 = getMap().addMarker(new MarkerOptions().position(markerP19Position).draggable(true).visible(false));
+
+
+LatLng markerO120Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 20 * boomWidth, heading + 90);
+
+mMarkerO120 = getMap().addMarker(new MarkerOptions().position(markerO120Position).draggable(true).visible(false));
+
+LatLng markerP120Position = SphericalUtil.computeOffset(mMarkerB.getPosition(), 20 * boomWidth, heading + 90);
+
+mMarkerP120 = getMap().addMarker(new MarkerOptions().position(markerP120Position).draggable(true).visible(false));
+
+
+
+
+//Negative Direction
+
+LatLng markerIPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(),  boomWidth * heighthalfer, heading - 90);
+
+mMarkerI = getMap().addMarker(new MarkerOptions().position(markerIPosition).draggable(true).visible(false));
+
+
+LatLng markerJPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  boomWidth * heighthalfer, heading - 90);
+
+mMarkerJ = getMap().addMarker(new MarkerOptions().position(markerJPosition).draggable(true).visible(false));
+
+
+
+LatLng markerKPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 2 * boomWidth, heading - 90);
+
+mMarkerK = getMap().addMarker(new MarkerOptions().position(markerKPosition).draggable(true).visible(false));
+
+
+LatLng markerLPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  2* boomWidth, heading - 90);
+
+mMarkerL = getMap().addMarker(new MarkerOptions().position(markerLPosition).draggable(true).visible(false));
+
+
+
+LatLng markerMPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 3 * boomWidth, heading - 90);
+
+mMarkerM = getMap().addMarker(new MarkerOptions().position(markerMPosition).draggable(true).visible(false));
+
+
+LatLng markerNPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  3 * boomWidth, heading - 90);
+
+mMarkerN = getMap().addMarker(new MarkerOptions().position(markerNPosition).draggable(true).visible(false));
+
+
+
+LatLng markerOPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 4 * boomWidth, heading - 90);
+
+mMarkerO = getMap().addMarker(new MarkerOptions().position(markerOPosition).draggable(true).visible(false));
+
+
+LatLng markerPPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  4 * boomWidth, heading - 90);
+
+mMarkerP = getMap().addMarker(new MarkerOptions().position(markerPPosition).draggable(true).visible(false));
+
+
+
+LatLng markerQPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 5 * boomWidth, heading - 90);
+
+mMarkerQ = getMap().addMarker(new MarkerOptions().position(markerQPosition).draggable(true).visible(false));
+
+
+LatLng markerRPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  5 * boomWidth, heading - 90);
+
+mMarkerR = getMap().addMarker(new MarkerOptions().position(markerRPosition).draggable(true).visible(false));
+
+
+
+LatLng markerSPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 6 * boomWidth, heading - 90);
+
+mMarkerS = getMap().addMarker(new MarkerOptions().position(markerSPosition).draggable(true).visible(false));
+
+
+LatLng markerTPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  6 * boomWidth, heading - 90);
+
+mMarkerT = getMap().addMarker(new MarkerOptions().position(markerTPosition).draggable(true).visible(false));
+
+
+LatLng markerUPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 7 * boomWidth, heading - 90);
+
+mMarkerU = getMap().addMarker(new MarkerOptions().position(markerUPosition).draggable(true).visible(false));
+
+
+LatLng markerVPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  7 * boomWidth, heading - 90);
+
+mMarkerV = getMap().addMarker(new MarkerOptions().position(markerVPosition).draggable(true).visible(false));
+
+
+
+LatLng markerWPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 8 * boomWidth, heading - 90);
+
+mMarkerW = getMap().addMarker(new MarkerOptions().position(markerWPosition).draggable(true).visible(false));
+
+
+LatLng markerXPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  8 * boomWidth, heading - 90);
+
+mMarkerX = getMap().addMarker(new MarkerOptions().position(markerXPosition).draggable(true).visible(false));
+
+
+
+LatLng markerYPosition = SphericalUtil.computeOffset(mMarkerA.getPosition(), 9 * boomWidth, heading - 90);
+
+mMarkerY = getMap().addMarker(new MarkerOptions().position(markerYPosition).draggable(true).visible(false));
+
+
+LatLng markerZPosition = SphericalUtil.computeOffset(mMarkerB.getPosition(),  9 * boomWidth, heading - 90);
+
+mMarkerZ = getMap().addMarker(new MarkerOptions().position(markerZPosition).draggable(true).visible(false));
+
+
+
+LatLng markerA2Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 10 * boomWidth, heading - 90);
+
+mMarkerA2 = getMap().addMarker(new MarkerOptions().position(markerA2Position).draggable(true).visible(false));
+
+LatLng markerB2Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  10 * boomWidth, heading - 90);
+
+mMarkerB2 = getMap().addMarker(new MarkerOptions().position(markerB2Position).draggable(true).visible(false));
+
+
+
+LatLng markerC2Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 11 * boomWidth, heading - 90);
+
+mMarkerC2 = getMap().addMarker(new MarkerOptions().position(markerC2Position).draggable(true).visible(false));
+
+LatLng markerD2Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  11 * boomWidth, heading - 90);
+
+mMarkerD2 = getMap().addMarker(new MarkerOptions().position(markerD2Position).draggable(true).visible(false));
+
+
+
+LatLng markerE2Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 12 * boomWidth, heading - 90);
+
+mMarkerE2 = getMap().addMarker(new MarkerOptions().position(markerE2Position).draggable(true).visible(false));
+
+LatLng markerF2Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  12 * boomWidth, heading - 90);
+
+mMarkerF2 = getMap().addMarker(new MarkerOptions().position(markerF2Position).draggable(true).visible(false));
+
+LatLng markerY13Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 13 * boomWidth, heading - 90);
+
+mMarkerY13 = getMap().addMarker(new MarkerOptions().position(markerY13Position).draggable(true).visible(false));
+
+LatLng markerZ13Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  13 * boomWidth, heading - 90);
+
+mMarkerZ13 = getMap().addMarker(new MarkerOptions().position(markerZ13Position).draggable(true).visible(false));
+
+LatLng markerY14Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 14 * boomWidth, heading - 90);
+
+mMarkerY14 = getMap().addMarker(new MarkerOptions().position(markerY14Position).draggable(true).visible(false));
+
+LatLng markerZ14Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  14 * boomWidth, heading - 90);
+
+mMarkerZ14 = getMap().addMarker(new MarkerOptions().position(markerZ14Position).draggable(true).visible(false));
+
+LatLng markerY15Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 15 * boomWidth, heading - 90);
+
+mMarkerY15 = getMap().addMarker(new MarkerOptions().position(markerY15Position).draggable(true).visible(false));
+
+LatLng markerZ15Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  15 * boomWidth, heading - 90);
+
+mMarkerZ15 = getMap().addMarker(new MarkerOptions().position(markerZ15Position).draggable(true).visible(false));
+
+LatLng markerY16Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 16 * boomWidth, heading - 90);
+
+mMarkerY16 = getMap().addMarker(new MarkerOptions().position(markerY16Position).draggable(true).visible(false));
+
+LatLng markerZ16Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  16 * boomWidth, heading - 90);
+
+mMarkerZ16 = getMap().addMarker(new MarkerOptions().position(markerZ16Position).draggable(true).visible(false));
+
+LatLng markerY17Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 17 * boomWidth, heading - 90);
+
+mMarkerY17 = getMap().addMarker(new MarkerOptions().position(markerY17Position).draggable(true).visible(false));
+
+LatLng markerZ17Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  17 * boomWidth, heading - 90);
+
+mMarkerZ17 = getMap().addMarker(new MarkerOptions().position(markerZ17Position).draggable(true).visible(false));
+
+LatLng markerY18Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 18 * boomWidth, heading - 90);
+
+mMarkerY18 = getMap().addMarker(new MarkerOptions().position(markerY18Position).draggable(true).visible(false));
+
+LatLng markerZ18Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  18 * boomWidth, heading - 90);
+
+mMarkerZ18 = getMap().addMarker(new MarkerOptions().position(markerZ18Position).draggable(true).visible(false));
+
+LatLng markerY19Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 19 * boomWidth, heading - 90);
+
+mMarkerY19 = getMap().addMarker(new MarkerOptions().position(markerY19Position).draggable(true).visible(false));
+
+LatLng markerZ19Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  19 * boomWidth, heading - 90);
+
+mMarkerZ19 = getMap().addMarker(new MarkerOptions().position(markerZ19Position).draggable(true).visible(false));
+
+LatLng markerY120Position = SphericalUtil.computeOffset(mMarkerA.getPosition(), 20 * boomWidth, heading - 90);
+
+mMarkerY120 = getMap().addMarker(new MarkerOptions().position(markerY120Position).draggable(true).visible(false));
+
+LatLng markerZ120Position = SphericalUtil.computeOffset(mMarkerB.getPosition(),  20 * boomWidth, heading - 90);
+
+mMarkerZ120 = getMap().addMarker(new MarkerOptions().position(markerZ120Position).draggable(true).visible(false));
+
+
+mPolylineB = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineC = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineD = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineE = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineF = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineG = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineH = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineI = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineJ = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineK = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineL = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineN = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineO = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineP = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineQ = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineR = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineS = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineT = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineU = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineV = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineW = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineX = getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+
+mPolylineSecSideA12 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA13 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA14 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA15 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA16 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA17 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA18 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA19 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineSecSideA20 =   getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+
+
+mPolylineM13 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM14 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM15 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM16 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM17 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM18 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM19 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+mPolylineM20 =  getMap().addPolyline(new PolylineOptions().geodesic(true).visible(true).width(3));
+
+
+updatePolyline();
+
+}
+//	CameraPosition cameraPosition = new CameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 17, 0, bearingorientation);
+
+//  getMap().animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+
+
+
+}
+
+else{
+
+
+Toast.makeText(getApplicationContext(), "No GPS Signal",
+Toast.LENGTH_LONG).show(); }
+
+
+
+
+
+
+}
+
+
+
+
+@Override
+public Loader<Cursor> onCreateLoader(int arg0,
+Bundle arg1) {
+
+// Uri to the content provider LocationsContentProvider
+Uri uri = LocationsContentProvider.CONTENT_URI;
+
+// Fetches all the rows from locations table
+return new CursorLoader(this, uri, null, null, null, null);
+
+}
+
+
+
+
+@Override
+public void onClick(View v) {
+// TODO Auto-generated method stub
+
+}
+
+private void loadSpinnerData() {
+// database handler
+
+}
+
+
+@Override
+public void onItemSelected(AdapterView<?> parent, View view, int position,
+long id) {
+
+label = parent.getItemAtPosition(position).toString();
+
+
+
+
+//fieldLoader();
+// popupWindowOpener.dismiss();
+// TODO Auto-generated method stub
+
+}
+
+public void setLabel(String label) {
+this.label = label;
+}
+
+public static String getLabel() {
+return label;
+}
+
+
+public void fieldLoader() {
+
+Toast.makeText(getApplicationContext(), "LOADING " + label,
+Toast.LENGTH_LONG).show();
+
+//DO QUERY FOR ALL STUFF WITH THAT FIELD NAME
+getSupportLoaderManager().initLoader(0, null, this);
+
+//PUT A BUTTON IN POP UP VIEW THAT WILL ENGAGE THE LOADERMANAGER
+
+
+}
+
+@Override
+public void onNothingSelected(AdapterView<?> arg0) {
+// TODO Auto-generated method stub
+
+}
+
+private String getDateTime() {
+SimpleDateFormat dateFormat = new SimpleDateFormat(
+"yyyy-MM-dd", Locale.getDefault());
+Date date = new Date();
+return dateFormat.format(date);
+}
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
